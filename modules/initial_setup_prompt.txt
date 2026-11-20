@@ -1,0 +1,3 @@
+after the success of success of draw2 i am proceding to draw3 
+at main folder there should be python files and at d:\draw3\rander_engin there should be .exe files and d:\draw3\rander_engin\c++files at hear there should rendering code c++ and d:\draw3\ai_memory memory for you to save you want d:\draw3\ai_memory\prompt .txt files from me and other with there names 
+(Python executable: D:/python/python.exe)

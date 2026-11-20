@@ -1,0 +1,323 @@
+{
+  "title": "Draw3 OpenGL Visual Color & Shape Test",
+  "canvas": [
+    960.0,
+    720.0
+  ],
+  "shapes": [
+    {
+      "id": 101,
+      "name": "central_hex",
+      "type": "regular_polygon",
+      "parent_id": -1,
+      "closed": true,
+      "z": 0,
+      "color": {
+        "schema": "draw.color",
+        "version": 1,
+        "name": "central_theme",
+        "dynamic": true,
+        "channels": {
+          "body": {
+            "fill": {
+              "type": "hsv",
+              "h": {
+                "type": "cycle",
+                "speed": 60.0,
+                "offset": 0.0,
+                "delay": 0.0,
+                "enabled": true
+              },
+              "s": 90.0,
+              "v": 100.0,
+              "a": 1.0
+            },
+            "opacity": 1.0,
+            "blend": "normal",
+            "filters": []
+          },
+          "border": {
+            "fill": {
+              "type": "hsv",
+              "h": {
+                "type": "cycle",
+                "speed": 60.0,
+                "offset": 180.0,
+                "delay": 0.0,
+                "enabled": true
+              },
+              "s": 100.0,
+              "v": 100.0,
+              "a": 1.0
+            },
+            "width": 4.0,
+            "style": "solid",
+            "opacity": 1.0,
+            "blend": "normal"
+          },
+          "shadow": null,
+          "glow": null
+        },
+        "metadata": null
+      },
+      "transform": {
+        "position": [
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0
+        ],
+        "rotation": 0.0,
+        "origin": [
+          0.0,
+          0.0
+        ]
+      },
+      "geometry": {
+        "vertex_count": 6,
+        "index_count": 12,
+        "vertices": [
+          0.0,
+          100.0,
+          86.60254,
+          50.0,
+          86.60254,
+          -50.0,
+          0.0,
+          -100.0,
+          -86.60254,
+          -50.0,
+          -86.60254,
+          50.0
+        ],
+        "indices": [
+          5,
+          0,
+          1,
+          5,
+          1,
+          2,
+          5,
+          2,
+          3,
+          3,
+          4,
+          5
+        ]
+      },
+      "sub_shape_ids": [],
+      "versions": {
+        "geometry": 1,
+        "transform": 1,
+        "metadata": 1
+      }
+    },
+    {
+      "id": 102,
+      "name": "pulsing_card",
+      "type": "rectangle",
+      "parent_id": -1,
+      "closed": true,
+      "z": 0,
+      "color": {
+        "schema": "draw.color",
+        "version": 1,
+        "name": "card_theme",
+        "dynamic": true,
+        "channels": {
+          "body": {
+            "fill": [
+              0.0588,
+              0.0902,
+              0.1647,
+              1.0
+            ],
+            "opacity": 1.0,
+            "blend": "normal",
+            "filters": []
+          },
+          "border": {
+            "fill": [
+              0.2196,
+              0.7412,
+              0.9725,
+              1.0
+            ],
+            "width": {
+              "type": "pulse",
+              "min": 2.0,
+              "max": 8.0,
+              "speed": 2.0,
+              "easing": "smooth",
+              "delay": 0.0,
+              "enabled": true
+            },
+            "style": "solid",
+            "opacity": 1.0,
+            "blend": "normal"
+          },
+          "shadow": null,
+          "glow": null
+        },
+        "metadata": null
+      },
+      "transform": {
+        "position": [
+          -300.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0
+        ],
+        "rotation": 0.0,
+        "origin": [
+          0.0,
+          0.0
+        ]
+      },
+      "geometry": {
+        "vertex_count": 4,
+        "index_count": 6,
+        "vertices": [
+          -110.0,
+          70.0,
+          110.0,
+          70.0,
+          110.0,
+          -70.0,
+          -110.0,
+          -70.0
+        ],
+        "indices": [
+          3,
+          0,
+          1,
+          1,
+          2,
+          3
+        ]
+      },
+      "sub_shape_ids": [],
+      "versions": {
+        "geometry": 1,
+        "transform": 1,
+        "metadata": 1
+      }
+    },
+    {
+      "id": 103,
+      "name": "oscillating_badge",
+      "type": "regular_polygon",
+      "parent_id": -1,
+      "closed": true,
+      "z": 0,
+      "color": {
+        "schema": "draw.color",
+        "version": 1,
+        "name": "badge_theme",
+        "dynamic": true,
+        "channels": {
+          "body": {
+            "fill": [
+              0.8627,
+              0.149,
+              0.149,
+              1.0
+            ],
+            "opacity": 1.0,
+            "blend": "normal",
+            "filters": []
+          },
+          "border": {
+            "fill": {
+              "type": "hsv",
+              "h": {
+                "type": "cycle",
+                "speed": 90.0,
+                "offset": 0.0,
+                "delay": 0.0,
+                "enabled": true
+              },
+              "s": 100.0,
+              "v": 100.0,
+              "a": 1.0
+            },
+            "width": 3.0,
+            "style": "solid",
+            "opacity": 1.0,
+            "blend": "normal"
+          },
+          "shadow": null,
+          "glow": null
+        },
+        "metadata": null
+      },
+      "transform": {
+        "position": [
+          300.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0
+        ],
+        "rotation": 0.0,
+        "origin": [
+          0.0,
+          0.0
+        ]
+      },
+      "geometry": {
+        "vertex_count": 8,
+        "index_count": 18,
+        "vertices": [
+          0.0,
+          90.0,
+          63.63961,
+          63.63961,
+          90.0,
+          0.0,
+          63.63961,
+          -63.63961,
+          0.0,
+          -90.0,
+          -63.63961,
+          -63.63961,
+          -90.0,
+          -0.0,
+          -63.63961,
+          63.63961
+        ],
+        "indices": [
+          7,
+          0,
+          1,
+          7,
+          1,
+          2,
+          7,
+          2,
+          3,
+          7,
+          3,
+          4,
+          7,
+          4,
+          5,
+          5,
+          6,
+          7
+        ]
+      },
+      "sub_shape_ids": [],
+      "versions": {
+        "geometry": 1,
+        "transform": 1,
+        "metadata": 1
+      }
+    }
+  ]
+}
