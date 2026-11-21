@@ -13,8 +13,6 @@ from .shape import (
     SideEdit,
     WholeEdit,
     SubEdit,
-    set_canvas_size,
-    get_canvas_size,
     GLOBAL_REGISTRY,
     DrawShapeError,
     ClosedShapeTopologyError,
@@ -163,6 +161,17 @@ from .windows import (
     GLOBAL_WINDOW_REGISTRY,
     GLOBAL_ELEMENT_REGISTRY,
 )
+from . import maths
+from .maths import (
+    set_canvas_size,
+    get_canvas_size,
+    set_dpi,
+    get_dpi,
+    resolve,
+    resolve_size,
+    resolve_position,
+    resolve_ratio,
+)
 
 # ── Motion callable namespace (Draw.motion, Draw.time_line, Draw.timeline) ──
 motion = motion_api
@@ -231,8 +240,6 @@ __all__ = [
     "SideEdit",
     "WholeEdit",
     "SubEdit",
-    "set_canvas_size",
-    "get_canvas_size",
     "GLOBAL_REGISTRY",
     "DrawShapeError",
     "ClosedShapeTopologyError",
@@ -373,4 +380,14 @@ __all__ = [
     "WindowLifecycleError",
     "InvalidAnchorError",
     "InvalidActionError",
+    # Maths & Units
+    "maths",
+    "resolve",
+    "resolve_size",
+    "resolve_position",
+    "resolve_ratio",
+    "set_canvas_size",
+    "get_canvas_size",
+    "set_dpi",
+    "get_dpi",
 ]

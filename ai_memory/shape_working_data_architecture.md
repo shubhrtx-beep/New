@@ -20,7 +20,6 @@ d:\draw3\
 │   └── shape\
 │       ├── __init__.py      # Shape subsystem exports & compatibility delegates
 │       ├── errors.py        # Complete custom exception hierarchy
-│       ├── units.py         # UnitResolver: px, %, canvas/parent/edge scopes
 │       ├── geometry.py      # Primitive generators, Ear-Clipping triangulation, seam hole stitching
 │       ├── transform.py     # Transform2D, local origin rotation, bounds computation
 │       ├── modifiers.py     # SideEdit (bend, warp), WholeEdit (edges, flip, remove), SubEdit
@@ -28,7 +27,7 @@ d:\draw3\
 │       ├── group.py         # ShapeGroup: batch transformations & context manager
 │       └── registry.py      # SceneRegistry: duplicate checks, weakref scoped mode, ShapesNamespace
 └── test\
-    └── test_shape_module.py # Full verification suite (primitives, units, errors, lifecycle)
+    └── test_shape_module.py # Full verification suite (primitives, numerical coords, errors, lifecycle)
 ```
 
 ---
@@ -89,20 +88,12 @@ d:\draw3\
 
 ---
 
-### 3.4 Unit Resolution & Percentage Scopes (`units.py`)
-* **Method**: `UnitResolver.to_float(val, reference)`
-  - Strips `"px"` and parses float directly.
-  - Parses `"%"`, dividing by $100.0$ and multiplying by the active `reference`.
-* **Scope Rules**:
-  - **Canvas Scope (Top-Level Shapes)**: Reference is `_CANVAS_SIZE` (default `1920.0 x 1080.0`). Configurable via `Draw.set_canvas_size(w, h)`.
-  - **Parent Scope (Nested inside `sub_edit` or `parent="card"`)**:
-    - Reference width and height are the parent's resolved bounding box (`parent.resolved_size`).
-    - Handled via `_re_resolve_parent_scope(parent_size)`: when a child shape is attached to a parent, its relative percentage dimensions are automatically re-calculated against the parent's bounds.
-  - **Corner Rounding Scope (`edges="50%"` vs `"100%"`)**:
-    - Reference is the maximum bevel radius:
-      $$r_{\max} = \frac{\min(\text{width}, \text{height})}{2}$$
-    - `"100%"` yields full pill/circle rounding ($r = r_{\max} = 0.5 \min(w, h)$).
-    - `"50%"` yields half-maximum rounding ($r = 0.25 \min(w, h)$).
+### 3.4 Pure Numerical Coordinates & Decoupled Unit Conversion
+* **Status**: Local unit conversion (`units.py`, `UnitResolver`, `"px"`, `"%"`) has been completely removed from the Shape subsystem.
+* **Working Data Standard**:
+  - `Shape` consumes pure numeric 2D coordinates `(float, float)` for `position`, `size`, and numeric radii for `edges`.
+  - Origin anchor strings (`"center"`, `"top-left"`, etc.) are resolved geometrically inside `Shape._resolve_origin` based on the shape's width and height without string unit parsing.
+  - Sizing and positional attributes are directly validated numerical floats (`_parse_vec2`), keeping the Shape working data structure clean and ready to integrate with the upcoming universal unit conversion subsystem.
 
 ---
 

@@ -66,7 +66,7 @@ def test_core_primitives():
 
 
 def test_unit_resolution():
-    print("Testing unit resolution ('px', '%', canvas vs parent scope)...")
+    print("Testing universal unit resolution ('px', '%', 'cm', canvas vs parent scope)...")
     Draw.GLOBAL_REGISTRY.clear()
     Draw.set_canvas_size(1920.0, 1080.0)
 
@@ -82,7 +82,7 @@ def test_unit_resolution():
     # 10% of 1920 = 192.0
     assert root.resolved_position == (192.0, 50.0)
 
-    # Percentage against parent in sub_edit
+    # Sub_edit child nesting with relative units
     card = Draw.shape(
         name="parent_card",
         type="rectangle",
@@ -105,7 +105,17 @@ def test_unit_resolution():
     assert header.parent == "parent_card"
     assert header.clip is True
 
-    print("  [PASS] Unit resolution passed.")
+    # Physical units (cm at DPI=96: 2.54cm = 1.0in = 96px)
+    Draw.set_dpi(96.0)
+    phys = Draw.shape(
+        name="phys_box",
+        type="rectangle",
+        size=("2.54cm", "1in"),
+    )
+    assert round(phys.resolved_size[0], 1) == 96.0
+    assert round(phys.resolved_size[1], 1) == 96.0
+
+    print("  [PASS] Universal unit resolution passed.")
 
 
 def test_modifiers_and_topology():

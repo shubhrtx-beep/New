@@ -6,43 +6,36 @@ shares, and provides lookup for nested coordinate resolution.
 """
 
 import warnings
-from typing import Dict, Tuple, Optional, List
+from typing import Dict, Tuple, Optional, List, Any
 
 from .errors import InvalidRegionRatioError
+from ..maths import (
+    validate_ratios as maths_validate_ratios,
+    resolve_ratio as maths_resolve_ratio,
+    resolve as maths_resolve,
+)
+from ..maths.errors import InvalidRatioError
 
 # Floating-point tolerance for ratio sum validation
 _RATIO_TOLERANCE = 1e-6
 
 
-def validate_ratios(ratio: Dict[str, float]) -> None:
-    """Validates that all ratio values are in [0, 1] and sum to 1.0 within tolerance.
+def validate_ratios(ratio: Dict[str, Any], total_dimension: Optional[float] = None) -> None:
+    """Validates that all ratio values are well-formed and sum properly.
+
+    Supports:
+    * Standard fractional ratios (e.g. 0.05, 0.95 summing to 1.0)
+    * Percentage strings (e.g. "5%", "95%" summing to 100%)
+    * Absolute pixel / physical units (e.g. "40px", "2cm") mixed with ratios.
 
     Raises ``InvalidRegionRatioError`` with detailed diagnostics on failure.
-    Ratios are never silently normalised.
     """
     if not ratio:
         return
-
-    # Check individual range first
-    for region_name, value in ratio.items():
-        if value < 0.0 or value > 1.0:
-            raise InvalidRegionRatioError(
-                f"Invalid ratio for region '{region_name}'.\n\n"
-                f"Received: {value}\n"
-                f"Allowed range: 0.0 to 1.0"
-            )
-
-    # Check total sum
-    total = sum(ratio.values())
-    if abs(total - 1.0) > _RATIO_TOLERANCE:
-        lines = [f"Region ratios must sum to 1.0.\n\nReceived:"]
-        max_name_len = max(len(n) for n in ratio)
-        for name, val in ratio.items():
-            lines.append(f"    {name:<{max_name_len}} = {val}")
-        lines.append(f"\nTotal = {total}")
-        lines.append(f"Expected = 1.0")
-        lines.append(f"\nDifference = {round(abs(total - 1.0), 10)}")
-        raise InvalidRegionRatioError("\n".join(lines))
+    try:
+        maths_validate_ratios(ratio, total_dimension=total_dimension)
+    except InvalidRatioError as err:
+        raise InvalidRegionRatioError(str(err)) from err
 
 
 class Region:
@@ -101,27 +94,32 @@ class RegionLayout:
 
     Regions are stacked vertically (top-to-bottom) by default, in the
     order they appear in the ``ratio`` dict.
+    Supports pure ratios (0.05, 0.95), percentages ("5%", "95%"),
+    and physical / pixel units ("40px", "2cm").
     """
 
-    def __init__(self, ratio: Dict[str, float], window_size: Tuple[float, float]) -> None:
-        validate_ratios(ratio)
-        self._ratio: Dict[str, float] = dict(ratio)
-        self._window_size: Tuple[float, float] = window_size
+    def __init__(self, ratio: Dict[str, Any], window_size: Tuple[float, float]) -> None:
+        self._window_size: Tuple[float, float] = (float(window_size[0]), float(window_size[1]))
+        validate_ratios(ratio, total_dimension=self._window_size[1])
+        self._raw_ratio: Dict[str, Any] = dict(ratio)
+        self._ratio: Dict[str, float] = {}
         self._regions: Dict[str, Region] = {}
         self._order: List[str] = list(ratio.keys())
         self._compute()
 
     def _compute(self) -> None:
-        """Recomputes region pixel bounds from ratios and window size."""
+        """Recomputes region pixel bounds from ratios/units and window size."""
         w, h = self._window_size
         y_offset = 0.0
         self._regions.clear()
+        heights = maths_resolve_ratio(self._raw_ratio, h)
         for name in self._order:
-            r = self._ratio[name]
-            region_height = r * h
+            region_height = heights[name]
+            frac = (region_height / h) if h > 0.0 else 0.0
+            self._ratio[name] = frac
             self._regions[name] = Region(
                 name=name,
-                ratio=r,
+                ratio=frac,
                 origin=(0.0, y_offset),
                 size=(w, region_height),
             )
@@ -129,13 +127,13 @@ class RegionLayout:
 
     def recalculate(self, window_size: Tuple[float, float]) -> None:
         """Recomputes all region bounds for a new window size."""
-        self._window_size = window_size
+        self._window_size = (float(window_size[0]), float(window_size[1]))
         self._compute()
 
-    def update_ratio(self, name: str, new_ratio: float) -> None:
+    def update_ratio(self, name: str, new_ratio: Any) -> None:
         """Updates a single region's ratio. Caller must revalidate totals."""
-        if name in self._ratio:
-            self._ratio[name] = new_ratio
+        if name in self._raw_ratio:
+            self._raw_ratio[name] = new_ratio
             self._compute()
 
     def get(self, name: str) -> Optional[Region]:

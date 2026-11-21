@@ -42,7 +42,8 @@ def resolve_anchor_position(
     cx, cy = container_origin
     cw, ch = container_size
     ew, eh = element_size
-    mx, my = margin
+    mx = float(maths_resolve(margin[0], reference=cw)) if margin else 0.0
+    my = float(maths_resolve(margin[1], reference=ch)) if margin else 0.0
 
     if anchor is None or anchor == "top_left":
         return (cx + mx, cy + my)
@@ -67,30 +68,17 @@ def resolve_anchor_position(
         return (cx + mx, cy + my)
 
 
+from ..maths import (
+    resolve as maths_resolve,
+    resolve_size as maths_resolve_size,
+)
+
+
 def resolve_unit(value: object, axis_length_px: float) -> float:
-    """Future ``units.resolve(value, axis_length_px)`` hook.
-
-    Currently accepts:
-    * Plain numbers (int/float) — returned directly.
-    * Percentage strings (``"50%"``) — resolved against *axis_length_px*.
-    * Pixel strings (``"46px"``) — numeric part returned directly.
-
-    Later this hook will also support ``"1cm"`` etc.
+    """Universal unit resolver hook for windows layout.
+    Accepts numbers, px, cm, mm, in, pt, %, vw, vh.
     """
-    if isinstance(value, (int, float)):
-        return float(value)
-
-    if isinstance(value, str):
-        cleaned = value.strip().lower()
-        if cleaned.endswith("px"):
-            return float(cleaned[:-2].strip())
-        elif cleaned.endswith("%"):
-            pct = float(cleaned[:-1].strip()) / 100.0
-            return pct * axis_length_px
-        else:
-            return float(cleaned)
-
-    return float(value)
+    return maths_resolve(value, reference=axis_length_px)
 
 
 def resolve_size_pair(
@@ -98,11 +86,8 @@ def resolve_size_pair(
     ref_width: float,
     ref_height: float,
 ) -> Tuple[float, float]:
-    """Resolves a (width, height) pair through the units hook."""
-    return (
-        resolve_unit(size[0], ref_width),
-        resolve_unit(size[1], ref_height),
-    )
+    """Resolves a (width, height) pair through the universal maths units hook."""
+    return maths_resolve_size(size, ref_width=ref_width, ref_height=ref_height)
 
 
 class LayoutResolver:

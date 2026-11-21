@@ -24,34 +24,12 @@ VALID_SPACES = {"shape", "scene"}
 
 
 def _parse_stop_offset(offset: Union[float, int, str]) -> float:
-    """Parses a stop offset float in [0.0, 1.0] or percentage string '0%'..'100%'."""
-    if isinstance(offset, (int, float)):
-        val = float(offset)
-        if not (0.0 <= val <= 1.0):
-            raise InvalidColorValueError(f"Gradient stop offset {val} must be in [0.0, 1.0].")
-        return val
-
-    if isinstance(offset, str):
-        s = offset.strip()
-        if s.endswith("%"):
-            try:
-                pct = float(s[:-1])
-                val = pct / 100.0
-                if not (0.0 <= val <= 1.0):
-                    raise InvalidColorValueError(f"Gradient stop offset {offset} out of [0%, 100%].")
-                return val
-            except ValueError as e:
-                raise InvalidColorValueError(f"Invalid percentage stop offset '{offset}'.") from e
-
-        try:
-            val = float(s)
-            if not (0.0 <= val <= 1.0):
-                raise InvalidColorValueError(f"Gradient stop offset {val} must be in [0.0, 1.0].")
-            return val
-        except ValueError as e:
-            raise InvalidColorValueError(f"Invalid stop offset '{offset}'.") from e
-
-    raise InvalidColorValueError(f"Invalid gradient stop offset type {type(offset).__name__}.")
+    """Parses a stop offset float in [0.0, 1.0] or percentage string '0%'..'100%' via Draw.maths."""
+    from ..maths import resolve_stop_offset, DrawMathsError
+    try:
+        return resolve_stop_offset(offset)
+    except (DrawMathsError, ValueError) as e:
+        raise InvalidColorValueError(str(e)) from e
 
 
 class ColorGradient:

@@ -5,6 +5,9 @@ All exceptions inherit from DrawWindowError for unified catching.
 """
 
 
+from ..maths.errors import InvalidRatioError
+
+
 class DrawWindowError(Exception):
     """Base exception for all Draw3 Window module errors."""
     pass
@@ -20,7 +23,7 @@ class WindowNotFoundError(DrawWindowError, KeyError):
     pass
 
 
-class InvalidRegionRatioError(DrawWindowError, ValueError):
+class InvalidRegionRatioError(DrawWindowError, InvalidRatioError):
     """Raised when ratio values are outside 0..1 or do not sum to 1 within tolerance."""
     pass
 

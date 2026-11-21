@@ -61,11 +61,25 @@ def validate_channel_value(name: str, value: Any) -> Any:
                 raise InvalidChannelFormatError(
                     f"Channel '{name}' expects a 2-element tuple (x, y), got {len(value)} elements."
                 )
-            return (float(value[0]), float(value[1]))
+            try:
+                from ..maths import resolve as maths_resolve
+                return (maths_resolve(value[0]), maths_resolve(value[1]))
+            except Exception as err:
+                raise InvalidChannelFormatError(
+                    f"Channel '{name}' expects a numeric tuple or scalar, got {value}."
+                ) from err
         elif isinstance(value, (int, float)):
-            # Scalar provided for a tuple channel — broadcast to both axes
             v = float(value)
             return (v, v)
+        elif isinstance(value, str):
+            try:
+                from ..maths import resolve as maths_resolve
+                v = maths_resolve(value)
+                return (v, v)
+            except Exception as err:
+                raise InvalidChannelFormatError(
+                    f"Channel '{name}' expects a numeric tuple or scalar, got {value}."
+                ) from err
         else:
             raise InvalidChannelFormatError(
                 f"Channel '{name}' expects a numeric tuple or scalar, got {type(value).__name__}."
@@ -76,22 +90,49 @@ def validate_channel_value(name: str, value: Any) -> Any:
                 raise InvalidChannelFormatError(
                     f"Channel '{name}' expects a 3-element tuple (rx, ry, rz), got {len(value)} elements."
                 )
-            return (float(value[0]), float(value[1]), float(value[2]))
+            try:
+                from ..maths import resolve as maths_resolve
+                return (maths_resolve(value[0]), maths_resolve(value[1]), maths_resolve(value[2]))
+            except Exception as err:
+                raise InvalidChannelFormatError(
+                    f"Channel '{name}' expects a 3-element numeric tuple or scalar, got {value}."
+                ) from err
         elif isinstance(value, (int, float)):
             v = float(value)
             return (v, v, v)
+        elif isinstance(value, str):
+            try:
+                from ..maths import resolve as maths_resolve
+                v = maths_resolve(value)
+                return (v, v, v)
+            except Exception as err:
+                raise InvalidChannelFormatError(
+                    f"Channel '{name}' expects a 3-element numeric tuple or scalar, got {value}."
+                ) from err
         else:
             raise InvalidChannelFormatError(
                 f"Channel '{name}' expects a 3-element numeric tuple or scalar, got {type(value).__name__}."
             )
     elif name in _SCALAR_CHANNELS:
-        if not isinstance(value, (int, float)):
+        if isinstance(value, (int, float)):
+            if name == "z":
+                return int(round(float(value)))
+            return float(value)
+        elif isinstance(value, str):
+            try:
+                from ..maths import resolve as maths_resolve
+                v = maths_resolve(value)
+                if name == "z":
+                    return int(round(v))
+                return v
+            except Exception as err:
+                raise InvalidChannelFormatError(
+                    f"Channel '{name}' expects a numeric scalar, got {value}."
+                ) from err
+        else:
             raise InvalidChannelFormatError(
                 f"Channel '{name}' expects a numeric scalar, got {type(value).__name__}."
             )
-        if name == "z":
-            return int(round(float(value)))
-        return float(value)
     else:
         # color, glow — pass through for now; their validation happens
         # at the integration layer with Draw.color

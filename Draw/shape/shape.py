@@ -21,8 +21,16 @@ from .errors import (
     InvalidLineVertexCountError,
     ClosedShapeTopologyError,
     OverConstrainedTopologyError,
+    InvalidCoordinateValueError,
 )
-from .units import UnitResolver, get_canvas_size
+from ..maths import (
+    resolve as maths_resolve,
+    resolve_size as maths_resolve_size,
+    resolve_position as maths_resolve_position,
+    resolve_origin as maths_resolve_origin,
+    resolve_corner_radius as maths_resolve_corner_radius,
+    get_canvas_size,
+)
 from .geometry import (
     Point2D,
     GeometryBuilder,
@@ -48,15 +56,15 @@ class Shape:
     def __init__(
         self,
         name: str,
-        position: Tuple[Union[float, str], Union[float, str]] = (0.0, 0.0),
+        position: Tuple[Union[float, int, str], Union[float, int, str]] = (0.0, 0.0),
         closed: bool = True,
         type: Optional[str] = None,
         vertices: Optional[int] = None,
         coordinates: Optional[Sequence[Point2D]] = None,
         generate: Optional[Sequence[str]] = None,
-        size: Tuple[Union[float, str], Union[float, str]] = (100.0, 100.0),
+        size: Tuple[Union[float, int, str], Union[float, int, str]] = (100.0, 100.0),
         scale: Tuple[float, float] = (1.0, 1.0),
-        origin: Union[Tuple[float, float], str] = (0.0, 0.0),
+        origin: Union[Tuple[Union[float, int, str], Union[float, int, str]], str] = (0.0, 0.0),
         z: int = 0,
         parent: Optional[str] = None,
         clip: bool = False,
@@ -88,11 +96,11 @@ class Shape:
         self.transform_version: int = 1
         self.metadata_version: int = 1
 
-        # Resolve sizing and position against canvas or parent scope
+        # Resolve sizing and position via Draw.maths universal units
         ref_w, ref_h = self._get_reference_dimensions()
-        self.resolved_size: Tuple[float, float] = UnitResolver.resolve_size(size, ref_w, ref_h)
-        self.resolved_position: Tuple[float, float] = UnitResolver.resolve_position(position, ref_w, ref_h)
-        self.resolved_origin: Tuple[float, float] = UnitResolver.resolve_origin(
+        self.resolved_size: Tuple[float, float] = maths_resolve_size(size, ref_w, ref_h)
+        self.resolved_position: Tuple[float, float] = maths_resolve_position(position, ref_w, ref_h)
+        self.resolved_origin: Tuple[float, float] = maths_resolve_origin(
             origin, self.resolved_size[0], self.resolved_size[1]
         )
 
@@ -103,7 +111,7 @@ class Shape:
             origin=self.resolved_origin,
         )
 
-        # Store raw inputs
+        # Store raw inputs for re-resolution on parent scope change
         self._raw_size_input = size
         self._raw_position_input = position
         self.raw_type = type
@@ -131,19 +139,46 @@ class Shape:
                     self.sub_shapes.append(child)
 
     def _re_resolve_parent_scope(self, parent_size: Tuple[float, float]) -> None:
-        """Re-evaluates parent-relative percentage sizing and positions."""
+        """Re-evaluates parent-relative units (%, vw, etc.) against parent bounds."""
         ref_w, ref_h = parent_size
-        self.resolved_size = UnitResolver.resolve_size(self._raw_size_input, ref_w, ref_h)
-        self.resolved_position = UnitResolver.resolve_position(self._raw_position_input, ref_w, ref_h)
+        self.resolved_size = maths_resolve_size(self._raw_size_input, ref_w, ref_h)
+        self.resolved_position = maths_resolve_position(self._raw_position_input, ref_w, ref_h)
         self.transform.position = self.resolved_position
         self._build_geometry()
 
     def _get_reference_dimensions(self) -> Tuple[float, float]:
-        """Resolves reference dimensions against parent bounding box if nested, or canvas if top-level."""
-        if self.parent and self._registry:
-            parent_shape = self._registry.get(self.parent)
-            if parent_shape:
-                return (parent_shape.resolved_size[0], parent_shape.resolved_size[1])
+        """Returns parent bounds if nested, or canvas size if top-level.
+        Parent can be another Shape, a Window name, or a Window Region name.
+        """
+        if self.parent:
+            if self._registry and self._registry.exists(self.parent):
+                parent_shape = self._registry.get(self.parent)
+                if parent_shape:
+                    return (parent_shape.resolved_size[0], parent_shape.resolved_size[1])
+
+            try:
+                from ..windows.registry import GLOBAL_WINDOW_REGISTRY
+                parent_str = str(self.parent)
+                if ":" in parent_str:
+                    win_name, reg_name = parent_str.split(":", 1)
+                    if GLOBAL_WINDOW_REGISTRY.exists(win_name):
+                        win = GLOBAL_WINDOW_REGISTRY.get(win_name)
+                        r = win.region(reg_name)
+                        if r:
+                            return (r.width, r.height)
+                        return (float(win.size[0]), float(win.size[1]))
+
+                if GLOBAL_WINDOW_REGISTRY.exists(parent_str):
+                    win = GLOBAL_WINDOW_REGISTRY.get(parent_str)
+                    return (float(win.size[0]), float(win.size[1]))
+
+                for win in GLOBAL_WINDOW_REGISTRY._windows.values():
+                    r = win.region(parent_str)
+                    if r:
+                        return (r.width, r.height)
+            except Exception:
+                pass
+
         return get_canvas_size()
 
     def _parse_side_edit(self, cfg: Any) -> Optional[SideEdit]:
@@ -240,7 +275,7 @@ class Shape:
                 verts, self.closed = ModifierPipeline.apply_remove(verts, we.remove, self.closed)
             if we.edges and self.closed:
                 min_dim = min(self.resolved_size[0], self.resolved_size[1])
-                resolved_radii = UnitResolver.resolve_corner_radius(we.edges, min_dim, len(verts))
+                resolved_radii = maths_resolve_corner_radius(we.edges, min_dim, len(verts))
                 verts = ModifierPipeline.apply_corner_rounding(verts, resolved_radii, self.closed)
             if we.flip:
                 verts = ModifierPipeline.apply_flip(verts, we.flip)
@@ -283,12 +318,14 @@ class Shape:
 
         if "size" in kwargs:
             ref_w, ref_h = self._get_reference_dimensions()
-            self.resolved_size = UnitResolver.resolve_size(kwargs["size"], ref_w, ref_h)
+            self.resolved_size = maths_resolve_size(kwargs["size"], ref_w, ref_h)
+            self._raw_size_input = kwargs["size"]
             geom_changed = True
 
         if "position" in kwargs:
             ref_w, ref_h = self._get_reference_dimensions()
-            self.resolved_position = UnitResolver.resolve_position(kwargs["position"], ref_w, ref_h)
+            self.resolved_position = maths_resolve_position(kwargs["position"], ref_w, ref_h)
+            self._raw_position_input = kwargs["position"]
             self.transform.position = self.resolved_position
             transform_changed = True
 
@@ -302,7 +339,7 @@ class Shape:
             transform_changed = True
 
         if "origin" in kwargs:
-            self.resolved_origin = UnitResolver.resolve_origin(
+            self.resolved_origin = maths_resolve_origin(
                 kwargs["origin"], self.resolved_size[0], self.resolved_size[1]
             )
             self.transform.origin = self.resolved_origin

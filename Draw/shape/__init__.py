@@ -12,11 +12,7 @@ from typing import (
     Any,
 )
 from .errors import *
-from .units import (
-    UnitResolver,
-    set_canvas_size,
-    get_canvas_size,
-)
+from ..maths import set_canvas_size, get_canvas_size
 from .geometry import (
     GeometryBuilder,
     MetadataGenerator,
@@ -44,15 +40,15 @@ shapes = ShapesNamespace(GLOBAL_REGISTRY)
 
 def shape(
     name: str,
-    position: Tuple[Union[float, str], Union[float, str]] = (0.0, 0.0),
+    position: Tuple[Union[float, int, str], Union[float, int, str]] = (0.0, 0.0),
     closed: bool = True,
     type: Optional[str] = None,
     vertices: Optional[int] = None,
     coordinates: Optional[Sequence[Tuple[float, float]]] = None,
     generate: Optional[Sequence[str]] = None,
-    size: Tuple[Union[float, str], Union[float, str]] = (100.0, 100.0),
+    size: Tuple[Union[float, int, str], Union[float, int, str]] = (100.0, 100.0),
     scale: Tuple[float, float] = (1.0, 1.0),
-    origin: Union[Tuple[float, float], str] = (0.0, 0.0),
+    origin: Union[Tuple[Union[float, int, str], Union[float, int, str]], str] = (0.0, 0.0),
     z: int = 0,
     parent: Optional[str] = None,
     clip: bool = False,

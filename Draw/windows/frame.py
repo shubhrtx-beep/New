@@ -16,6 +16,7 @@ from typing import Dict, List, Tuple, Optional, Union, Any
 from .errors import InvalidFrameConfigError, InvalidRegionRatioError
 from .region import validate_ratios
 from .element import ElementName, GLOBAL_ELEMENT_REGISTRY
+from ..maths import resolve_size as maths_resolve_size
 
 
 class FrameDescription:
@@ -29,16 +30,25 @@ class FrameDescription:
         self,
         *,
         frame_type: str,
-        size: Tuple[int, int],
-        min_size: Optional[Tuple[int, int]] = None,
-        max_size: Optional[Tuple[int, int]] = None,
+        size: Any = (800, 600),
+        min_size: Optional[Any] = None,
+        max_size: Optional[Any] = None,
         visible: bool = True,
         resizable: bool = True,
     ) -> None:
         self.frame_type: str = frame_type
-        self.size: Tuple[int, int] = size
-        self.min_size: Optional[Tuple[int, int]] = min_size
-        self.max_size: Optional[Tuple[int, int]] = max_size
+        rw, rh = maths_resolve_size(size)
+        self.size: Tuple[int, int] = (int(round(rw)), int(round(rh)))
+        if min_size is not None:
+            mw, mh = maths_resolve_size(min_size)
+            self.min_size: Optional[Tuple[int, int]] = (int(round(mw)), int(round(mh)))
+        else:
+            self.min_size = None
+        if max_size is not None:
+            xw, xh = maths_resolve_size(max_size)
+            self.max_size: Optional[Tuple[int, int]] = (int(round(xw)), int(round(xh)))
+        else:
+            self.max_size = None
         self.visible: bool = visible
         self.resizable: bool = resizable
 
@@ -117,9 +127,9 @@ class CustomFrame(FrameDescription):
         # Validate ratios eagerly (they describe the frame, not a live
         # window, so early validation is appropriate)
         if ratio:
-            validate_ratios(ratio)
+            validate_ratios(ratio, total_dimension=float(self.size[1]))
 
-        self.ratio: Dict[str, float] = dict(ratio or {})
+        self.ratio: Dict[str, Any] = dict(ratio or {})
         self.elements: List[str] = list(elements or [])
         self.drag_region: Optional[Union[str, List[str]]] = drag_region
         self.resize_border: int = max(0, int(resize_border))
